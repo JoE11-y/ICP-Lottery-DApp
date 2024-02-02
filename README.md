@@ -1,4 +1,3 @@
-
 # ICP-Lottery-DApp
 
 Simple lottery caninster built on the ICP network,
