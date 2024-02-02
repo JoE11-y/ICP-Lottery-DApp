@@ -24,6 +24,7 @@ export const Lottery = Record({
     noOfTickets: int32,
     winner: Opt(Principal),
     winningTicket: Opt(int32),
+    reward: Opt(nat64),
     players: Vec(Player),
     lotteryCompleted: int32,
 })
@@ -37,7 +38,7 @@ export const Order = Record({
     lotteryId: text,
     amount: nat64,
     status: OrderStatus,
-    buyer: Principal,
+    ticketBuyer: Principal,
     paid_at_block: Opt(nat64),
     memo: nat64
 });

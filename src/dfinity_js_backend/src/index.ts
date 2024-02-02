@@ -85,6 +85,7 @@ export default Canister({
             noOfTickets: 0,
             winner: None,
             winningTicket: None,
+            reward: None,
             players: [],
             lotteryCompleted: 0
         };
@@ -139,7 +140,7 @@ export default Canister({
             lotteryId: lottery.id,
             amount: amountToPay,
             status: { PaymentPending: "PAYMENT_PENDING" },
-            buyer: ic.caller(),
+            ticketBuyer: ic.caller(),
             paid_at_block: None,
             memo: generateCorrelationId(lottery.id)
         };
@@ -150,14 +151,17 @@ export default Canister({
         return Ok(order);
     }),
 
-    registerTickets: update([Principal, int32, int32, nat64, nat64, nat64], Result(Order, Message), async (seller, id, noOfTickets, amountPaid, block, memo) => {
+    registerTickets: update([int32, int32, nat64, nat64, nat64], Result(Order, Message), async (id, noOfTickets, amountPaid, block, memo) => {
         // check lottery state, and fail if state is not initialized
         if ('None' in lotteryState){
             return Err({ ConfigError: "lottery not yet initialized"});
         }
+
+        // get transaction sender
+        const caller = ic.caller();
         
         // confirm payment verification else fail
-        const paymentVerified = await verifyPaymentInternal(seller, amountPaid, block, memo);
+        const paymentVerified = await verifyPaymentInternal(caller, amountPaid, block, memo);
         if (!paymentVerified) {
             return Err({ NotFound: `cannot complete the purchase: cannot verify the payment, memo=${memo}` });
         }
@@ -187,8 +191,6 @@ export default Canister({
 
         // generate ticket numbers and assign tickets to their ticketIds
         const ticketNumbers = [];
-
-        const caller = ic.caller();
 
         let oldTicketsCount = lottery.noOfTickets;
         
@@ -272,12 +274,7 @@ export default Canister({
         return Ok(updatedOrder);
     }),
 
-    endLottery: update([QueryPayload], Result(text, Message), (payload) => {
-        // check payload data
-        if (typeof payload !== "object" || Object.keys(payload).length === 0) {
-            return Err({ NotFound: "invalid payoad" })
-        }
-
+    endLottery: update([int32], Result(text, Message), (id) => {
         // check lottery state, and fail if state is not initialized
         if ('None' in lotteryState){
             return Err({ ConfigError: "lottery not yet initialized"});
@@ -287,8 +284,6 @@ export default Canister({
         if (lotteryState.Some !== 1){
             return Err({ StateError: "cannot end lottery, check lottery state"});
         }
-
-        const id = payload.lotteryId;
 
         // get lottery and add tickets
         const lotteryOpt = lotteryStorage.get(id);
@@ -326,12 +321,7 @@ export default Canister({
         return Ok("lottery ended, winner can claim now.");
     }),
 
-    checkIfWinner: update([QueryPayload], Result(text, Message), async (payload) => {
-        // check payload data
-        if (typeof payload !== "object" || Object.keys(payload).length === 0) {
-            return Err({ NotFound: "invalid payoad" })
-        }
-
+    checkIfWinner: update([int32], Result(text, Message), async (id) => {
         // check lottery state, and fail if state is not initialized
         if ('None' in lotteryState){
             return Err({ ConfigError: "lottery not yet initialized"});
@@ -354,8 +344,6 @@ export default Canister({
         const winnersReward = prizePool.Some / 2n;
 
         prizePool.Some -= winnersReward;
-
-        const id = payload.lotteryId;
 
         // get lottery and add tickets
         const lotteryOpt = lotteryStorage.get(id);
@@ -424,11 +412,20 @@ export default Canister({
             ...lottery,
             winner: playerInfo.player,
             lotteryCompleted: 2,
+            rewards: winnersReward
         };
 
         lotteryStorage.insert(lottery.id, updatedLottery);
 
         return Ok("Congrats you're the winner check your balance")
+    }),
+
+    /*
+        a helper function to get canister address from the principal
+    */
+    getCanisterAddress: query([], text, () => {
+        let canisterPrincipal = ic.id();
+        return hexAddressFromPrincipal(canisterPrincipal, 0);
     }),
 
     getOrders: query([], Vec(Order), () => {
@@ -529,7 +526,6 @@ function generateCorrelationId(lotteryId: int32): nat64 {
     return hash(correlationId);
 };
 
-
 /*
     after the order is created, we give the `delay` amount of minutes to pay for the order.
     if it's not paid during this timeframe, the order is automatically removed from the pending orders.
@@ -557,7 +553,6 @@ async function verifyPaymentInternal(receiver: Principal, amount: nat64, block: 
     });
     return tx ? true : false;
 };
-
 
 // a workaround to make uuid package work with Azle
 globalThis.crypto = {

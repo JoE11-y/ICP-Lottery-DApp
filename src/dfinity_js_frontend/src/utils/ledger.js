@@ -1,8 +1,8 @@
 import { AccountIdentifier } from "@dfinity/nns";
 
-export async function transferICP(sellerAddress, amount, memo) {
+export async function transferICP(canisterAddress, amount, memo) {
     const canister = window.canister.ledger;
-    const account = AccountIdentifier.fromHex(sellerAddress);
+    const account = AccountIdentifier.fromHex(canisterAddress);
     const result = await canister.transfer({
         to: account.toUint8Array(),
         amount: { e8s: amount },
@@ -11,6 +11,9 @@ export async function transferICP(sellerAddress, amount, memo) {
         from_subaccount: [],
         created_at_time: []
     });
+    if (result.Err){
+        throw new Error(result.Err);
+    }
     return result.Ok;
 }
 
