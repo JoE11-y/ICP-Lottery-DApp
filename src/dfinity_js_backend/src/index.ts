@@ -1,7 +1,5 @@
-import { StableBTreeMap, Principal, nat64, ic, Opt, int8, int32, Vec, text, None, Canister, init, query, Some, update, Result, Err, Ok, Duration, bool, AzleVec } from 'azle';
-import {
-    Ledger, binaryAddressFromAddress, binaryAddressFromPrincipal, hexAddressFromPrincipal
-} from "azle/canisters/ledger";
+import { StableBTreeMap, Principal, nat64, ic, Opt, int8, int32, Vec, text, None, Canister, init, query, Some, update, Result, Err, Ok, Duration, bool } from 'azle';
+import { Ledger, binaryAddressFromAddress, hexAddressFromPrincipal } from "azle/canisters/ledger";
 import { Player, Lottery, LotteryPayload, BuyTicketPayload, QueryPayload, AddressPayload, LotteryConfiguration, Message, Order } from './types';
 //@ts-ignore
 import { hashCode } from "hashcode";
@@ -22,16 +20,11 @@ const pendingOrders = StableBTreeMap(4, nat64, Order);
 
 const ORDER_RESERVATION_PERIOD = 120n; // reservation period in seconds
 
-
 // custom configuration settings
-let currlotteryId : Opt<int32> = None;
-
-let lotteryState : Opt<int8> = None;
-
-let ticketPrice : Opt<nat64> = None;
-
+let currlotteryId: Opt<int32> = None;
+let lotteryState: Opt<int8> = None;
+let ticketPrice: Opt<nat64> = None;
 let lotteryDuration: Opt<nat64> = None;
-
 let prizePool: Opt<nat64> = None;
 
 /* 
@@ -43,13 +36,13 @@ const icpLedgerCanister = Ledger(Principal.fromText("ryjl3-tyaaa-aaaaa-aaaba-cai
 export default Canister({
     initializeLottery: init([LotteryPayload], (payload) => {
         // check lottery state, and fail if state is already initialized
-        if (!('None' in lotteryState)){
-            ic.trap(`Lottery already initilialized and is in ${lotteryState}`)
+        if (!('None' in lotteryState)) {
+            ic.trap(`Lottery already initialized and is in state ${lotteryState}`);
         }
 
         // check payload
         if (typeof payload !== "object" || Object.keys(payload).length === 0) {
-            ic.trap("invalid payoad")
+            ic.trap("Invalid payload");
         }
 
         // set lottery config parameters
@@ -60,33 +53,33 @@ export default Canister({
 
     startLottery: update([], Result(Lottery, Message), () => {
         // check lottery state, and fail if state is not initialized
-        if ('None' in lotteryState){
-            return Err({ ConfigError: "lottery not yet initialized"});
+        if ('None' in lotteryState) {
+            return Err({ ConfigError: "Lottery not yet initialized" });
         }
 
         // only start lottery if state has been set to 0 i.e ended
-        if (lotteryState.Some !== 0){
-            return Err({ StateError: "cannot start new lottery, check lottery state"});
+        if (lotteryState.Some !== 0) {
+            return Err({ StateError: "Cannot start new lottery, check lottery state" });
         }
 
         // get current lottery id
-        let id : int32 = getCurrentLotteryId();
+        let id: int32 = getCurrentLotteryId();
 
         // check if lottery duration is set
-        if ('None' in lotteryDuration){
-            return Err({ConfigError: "cannot start lottery, duration ont set"});
+        if ('None' in lotteryDuration) {
+            return Err({ ConfigError: "Cannot start lottery, duration not set" });
         }
 
         // create new lottery record
-        const lottery = { 
-            id: id as int32, 
-            startTime: ic.time(), 
-            endTime: ic.time() + lotteryDuration.Some, 
+        const lottery = {
+            id: id as int32,
+            startTime: ic.time(),
+            endTime: ic.time() + lotteryDuration.Some,
             noOfTickets: 0,
             winner: None,
             winningTicket: None,
             players: [],
-            lotteryCompleted: 0
+            lotteryCompleted: 0,
         };
 
         // store lottery
@@ -101,34 +94,34 @@ export default Canister({
     createTicketOrder: update([BuyTicketPayload], Result(Order, Message), (payload) => {
         // check payload data
         if (typeof payload !== "object" || Object.keys(payload).length === 0) {
-            return Err({ NotFound: "invalid payoad" })
+            return Err({ NotFound: "Invalid payload" })
         }
 
         // check lottery state, and fail if state is not initialized
-        if ('None' in lotteryState){
-            return Err({ ConfigError: "lottery not yet initialized"});
+        if ('None' in lotteryState) {
+            return Err({ ConfigError: "Lottery not yet initialized" });
         }
 
         // only buy ticket if state has been set to 1 i.e started
-        if (lotteryState.Some !== 1){
-            return Err({ StateError: "cannot start buy ticket, check lottery state"});
+        if (lotteryState.Some !== 1) {
+            return Err({ StateError: "Cannot start buy ticket, check lottery state" });
         }
 
         // get ticket price and amount to pay
         if ('None' in ticketPrice) {
-            return Err({ ConfigError: 'cannot buy tickets, price not set'})
+            return Err({ ConfigError: 'Cannot buy tickets, price not set' })
         }
 
         // get lottery
         const lotteryOpt = lotteryStorage.get(payload.lotteryId);
         if ("None" in lotteryOpt) {
-            return Err({ NotFound: `cannot create the order: lottery session with ${payload.lotteryId} not found` });
+            return Err({ NotFound: `Cannot create the order: lottery session with ${payload.lotteryId} not found` });
         }
         const lottery = lotteryOpt.Some;
 
         // check that lottery hasn't ended
-        if (lotteryOpt.Some.endTime < ic.time()){
-            return Err({StateError: "lottery over, can't buy tickets"})
+        if (lotteryOpt.Some.endTime < ic.time()) {
+            return Err({ StateError: "Lottery over, can't buy tickets" })
         }
 
         // compute amount to be paid
@@ -141,7 +134,7 @@ export default Canister({
             status: { PaymentPending: "PAYMENT_PENDING" },
             buyer: ic.caller(),
             paid_at_block: None,
-            memo: generateCorrelationId(lottery.id)
+            memo: generateCorrelationId(lottery.id),
         };
 
         // store and return order
@@ -152,127 +145,79 @@ export default Canister({
 
     registerTickets: update([Principal, int32, int32, nat64, nat64, nat64], Result(Order, Message), async (seller, id, noOfTickets, amountPaid, block, memo) => {
         // check lottery state, and fail if state is not initialized
-        if ('None' in lotteryState){
-            return Err({ ConfigError: "lottery not yet initialized"});
+        if ('None' in lotteryState) {
+            return Err({ ConfigError: "Lottery not yet initialized" });
         }
-        
+
         // confirm payment verification else fail
-        const paymentVerified = await verifyPaymentInternal(seller, amountPaid, block, memo);
+        const paymentVerified = await verifyPaymentInternal(ic.caller(), amountPaid, block, memo);
         if (!paymentVerified) {
-            return Err({ NotFound: `cannot complete the purchase: cannot verify the payment, memo=${memo}` });
+            return Err({ PaymentError: "Payment verification failed" });
         }
 
-        // get pending order and update
-        const pendingOrderOpt = pendingOrders.remove(memo);
-        if ("None" in pendingOrderOpt) {
-            return Err({ NotFound: `cannot complete the purchase: there is no pending order with id=${id}` });
+        // get order
+        const orderOpt = pendingOrders.get(memo);
+        if ("None" in orderOpt) {
+            return Err({ NotFound: "Order not found" });
         }
-        const order = pendingOrderOpt.Some;
-        const updatedOrder = { ...order, status: { Completed: "COMPLETED" }, paid_at_block: Some(block) };
+        const order = orderOpt.Some;
 
-        // get and update prizepool
-        if ('None' in prizePool){
-            prizePool = Some(amountPaid)
-        }else{
-            prizePool.Some += amountPaid;
+        // check order status
+        if ("OrderCompleted" in order.status || "OrderFailed" in order.status) {
+            return Err({ OrderError: `Invalid order status: ${order.status}` });
         }
 
-        // get lottery and add tickets
-        const lotteryOpt = lotteryStorage.get(id);
+        // get lottery
+        const lotteryOpt = lotteryStorage.get(order.lotteryId);
         if ("None" in lotteryOpt) {
-            return Err({ NotFound: `lottery session with id=${id} not found` });
+            return Err({ NotFound: "Lottery not found" });
         }
-
         const lottery = lotteryOpt.Some;
 
-        // generate ticket numbers and assign tickets to their ticketIds
-        const ticketNumbers = [];
-
-        const caller = ic.caller();
-
-        let oldTicketsCount = lottery.noOfTickets;
-        
-        let newTicketId = oldTicketsCount;
-        
-        while (newTicketId < (noOfTickets + oldTicketsCount)) {
-            ticketNumbers.push(newTicketId);
-            newTicketId += 1;
+        // register tickets
+        const newPlayerId = lottery.noOfTickets;
+        const ticketNumbers: Vec<nat64> = Vec();
+        for (let i = 0; i < noOfTickets; i++) {
+            const ticketNumber = BigInt(newPlayerId) + BigInt(i) + 1n;
+            ticketNumbers.push(ticketNumber);
         }
 
-        // generate lottery track identifier
-        const idTrack = `#${id}#`;
+        // create player information
+        const playerInformation = generatePlayerInformation(order.lotteryId, ic.caller(), newPlayerId, ticketNumbers);
 
-        // check mapping to get player lottery participation unique id arrays
-        let playerIdMap = playerIndexMap.get(caller);
+        // add player information to lottery
+        lottery.players.push(playerInformation);
 
-        let playerInfos = lottery.players;
+        // update lottery ticket count
+        lottery.noOfTickets += noOfTickets;
 
-        // check if player's participation array is empty
-        if ("None" in playerIdMap) {
-            //if empty create new information for player
-            let newId = `${uuidv4() + idTrack}`;
-            let newPlayerPosn =  playerInfos.length + 1;
+        // add player index mapping
+        playerIndexMap.insert(ic.caller(), playerInformation.tickets);
 
-            // update player information with new unique id
-            playerIdMap.Some.push(newId)
-            playerIndexMap.insert(caller, playerIdMap);
-            indexToPosnMap.insert(newId, newPlayerPosn)
+        // add index to position mapping
+        indexToPosnMap.insert(uuidv4(), lottery.players.length - 1);
 
-            // get player info and add to lottery player array
-            let playerInfo = generatePlayerInformation(id, caller, newPlayerPosn, ticketNumbers)
-            playerInfos.push(playerInfo)
-        }else{
-            let playerPosn: int32;
-            let uniqueId: string = "";
+        // set player lottery position and update order status
+        order.status = { OrderCompleted: "ORDER_COMPLETED" };
+        persistedOrders.insert(ic.caller(), order);
 
-            // check if player already has uniqueId 
-            for (let i of playerIdMap.Some){
-                if(i.includes(`${idTrack}`)){
-                    uniqueId = i;
-                    break;
-                }
-            }
-
-            // then get the player position
-            let playerPosnOpt = indexToPosnMap.get(uniqueId);
-
-            if('None' in playerPosnOpt) {
-                playerPosn = 0
-            }else {
-                playerPosn = playerPosnOpt.Some;
-            }
-
-            // check if unique id not present or playerPosn is 0 i.e hasn't bought a ticket in this lottery session
-            // but has bought a ticket in a previous lottery session
-            if(uniqueId == "" && playerPosn == 0){
-                // generate new id and update the player mapping informations
-                let newId = `${uuidv4() + idTrack}`;
-                let newPlayerPosn = playerInfos.length + 1;
-                playerIdMap.Some.push(newId);
-                playerIndexMap.insert(caller, playerIdMap);
-                indexToPosnMap.insert(newId, newPlayerPosn)
-                let playerInfo = generatePlayerInformation(id, caller, newPlayerPosn, ticketNumbers)
-                playerInfos.push(playerInfo)
-            }else{
-                // else just add ticketNumbers to player tickets array
-                let playerTickets = playerInfos[playerPosn - 1].tickets;
-                playerInfos[playerPosn - 1].tickets = playerTickets.concat(ticketNumbers);
+        // check if lottery is complete
+        if (lottery.noOfTickets === lottery.lotteryCompleted) {
+            // lottery is complete, process winner
+            const winner = selectWinner(lottery);
+            const paymentResult = await makePayment(winner.player, prizePool.Some);
+            if ("Err" in paymentResult) {
+                return Err({ PaymentError: `Error making payment: ${paymentResult.Err}` });
             }
         }
 
-        // update record in storage
-        const updatedLottery = {
-            ...lottery, 
-            noOfTickets: lottery.noOfTickets + noOfTickets,
-            players: playerInfos
-        }
+        // remove pending order
+        pendingOrders.remove(memo);
 
-        persistedOrders.insert(ic.caller(), updatedOrder);
-        lotteryStorage.insert(id, updatedLottery);
-        return Ok(updatedOrder);
+        return Ok(order);
     }),
 
-    endLottery: update([QueryPayload], Result(text, Message), (payload) => {
+   endLottery: update([QueryPayload], Result(text, Message), (payload) => {
         // check payload data
         if (typeof payload !== "object" || Object.keys(payload).length === 0) {
             return Err({ NotFound: "invalid payoad" })
@@ -469,95 +414,76 @@ export default Canister({
     }),
 })
 
+    ///////////////////////////// HELPER FUNCTIONS ///////////////////////////////////////////
 
-///////////////////////////// HELPER FUNCTIONS ///////////////////////////////////////////
-
-// to generate a new player information
-function generatePlayerInformation(lotteryId: int32, caller: Principal, newPlayerId: int32, ticketNumbers: Vec<any>) {
-    const newPlayer = {
+    // Generate a new player information
+    function generatePlayerInformation(lotteryId: int32, caller: Principal, newPlayerId: int32, ticketNumbers: Vec(nat64)): Player {
+        return {
             id: newPlayerId,
             lotteryId: lotteryId,
             player: caller,
-            tickets: ticketNumbers
-    }
-    return newPlayer
-}
+            tickets: ticketNumbers,
+        };
+    },
 
-// returns to the current lottery id
-function getCurrentLotteryId() {
-    if(currlotteryId.Some){
-        return currlotteryId.Some + 1;
-    }else {
-        return 0
-    }
-}
+    // Returns the current lottery id
+    function getCurrentLotteryId(): int32 {
+        return currlotteryId.Some ? currlotteryId.Some + 1 : 0;
+    },
 
-// to process payment from this canister to winner.
-async function makePayment(winner: Principal, amount: nat64) {
-    const toAddress = hexAddressFromPrincipal(winner, 0);
-    const transferFeeResponse = await ic.call(icpLedgerCanister.transfer_fee, { args: [{}] });
-    const transferResult = ic.call(icpLedgerCanister.transfer, {
-        args: [{
-            memo: 0n,
-            amount: {
-                e8s: amount
-            },
-            fee: {
-                e8s: transferFeeResponse.transfer_fee.e8s
-            },
-            from_subaccount: None,
-            to: binaryAddressFromAddress(toAddress),
-            created_at_time: None
-        }]
-    });
-    if ("Err" in transferResult) {
-        return Err({ PaymentFailed: `payment failed, err=${transferResult.Err}` })
-    }
-    return Ok({ PaymentCompleted: "payment completed" });
-}
-
-/*
-    a hash function that is used to generate correlation ids for orders.
-    also, we use that in the verifyPayment function where we check if the used has actually paid the order
-*/
-function hash(input: any): nat64 {
-    return BigInt(Math.abs(hashCode().value(input)));
-};
-
-function generateCorrelationId(lotteryId: int32): nat64 {
-    const correlationId = `${lotteryId}_${ic.caller().toText()}_${ic.time()}`;
-    return hash(correlationId);
-};
-
-
-/*
-    after the order is created, we give the `delay` amount of minutes to pay for the order.
-    if it's not paid during this timeframe, the order is automatically removed from the pending orders.
-*/
-function discardByTimeout(memo: nat64, delay: Duration) {
-    ic.setTimer(delay, () => {
-        const order = pendingOrders.remove(memo);
-        console.log(`Order discarded ${order}`);
-    });
-};
-
-async function verifyPaymentInternal(receiver: Principal, amount: nat64, block: nat64, memo: nat64): Promise<bool> {
-    const blockData = await ic.call(icpLedgerCanister.query_blocks, { args: [{ start: block, length: 1n }] });
-    const tx = blockData.blocks.find((block) => {
-        if ("None" in block.transaction.operation) {
-            return false;
+    // Process payment from this canister to winner
+    async function makePayment(winner: Principal, amount: nat64): Result(text, Message) {
+        const toAddress = hexAddressFromPrincipal(winner, 0);
+        const transferFeeResponse = await ic.call(icpLedgerCanister.transfer_fee, { args: [{}] });
+        const transferResult = ic.call(icpLedgerCanister.transfer, {
+            args: [{
+                memo: 0n,
+                amount: { e8s: amount },
+                fee: { e8s: transferFeeResponse.transfer_fee.e8s },
+                from_subaccount: None,
+                to: binaryAddressFromAddress(toAddress),
+                created_at_time: None,
+            }],
+        });
+        if ("Err" in transferResult) {
+            return Err({ PaymentFailed: `Payment failed, error=${transferResult.Err}` });
         }
-        const operation = block.transaction.operation.Some;
-        const senderAddress = binaryAddressFromPrincipal(ic.caller(), 0);
-        const receiverAddress = binaryAddressFromPrincipal(receiver, 0);
-        return block.transaction.memo === memo &&
-            hash(senderAddress) === hash(operation.Transfer?.from) &&
+        return Ok({ PaymentCompleted: "Payment completed" });
+    },
+
+    // Hash function for generating correlation ids for orders
+    function hash(input: any): nat64 {
+        return BigInt(Math.abs(hashCode().value(input)));
+    },
+
+    // Generate correlation id for orders
+    function generateCorrelationId(lotteryId: int32): nat64 {
+        const correlationId = `${lotteryId}_${ic.caller().toText()}_${ic.time()}`;
+        return hash(correlationId);
+    },
+
+    // Discard orders by timeout
+    function discardByTimeout(memo: nat64, delay: Duration): void {
+        ic.setTimer(delay, () => {
+            const order = pendingOrders.remove(memo);
+            console.log(`Order discarded ${order}`);
+        });
+    },
+
+    // Verify payment internally
+    async function verifyPaymentInternal(receiver: Principal, amount: nat64, block: nat64, memo: nat64): Promise<bool> {
+        const blockData = await ic.call(icpLedgerCanister.query_blocks, { args: [{ start: block, length: 1n }] });
+        const tx = blockData.blocks.find((block) => {
+            // Check transaction details
+            return block.transaction.memo === memo &&
+              hash(senderAddress) === hash(operation.Transfer?.from) &&
             hash(receiverAddress) === hash(operation.Transfer?.to) &&
             amount === operation.Transfer?.amount.e8s;
-    });
-    return tx ? true : false;
-};
-
+                true;
+        });
+        return tx ? true : false;
+    },
+});
 
 // a workaround to make uuid package work with Azle
 globalThis.crypto = {
