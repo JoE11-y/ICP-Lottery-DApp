@@ -1,8 +1,12 @@
-## Things to be explained in the course:
-1. What is Ledger? More details here: https://internetcomputer.org/docs/current/developer-docs/integrations/ledger/
-2. What is Internet Identity? More details here: https://internetcomputer.org/internet-identity
-3. What is Principal, Identity, Address? https://internetcomputer.org/internet-identity | https://yumimarketplace.medium.com/whats-the-difference-between-principal-id-and-account-id-3c908afdc1f9
-4. Canister-to-canister communication and how multi-canister development is done? https://medium.com/icp-league/explore-backend-multi-canister-development-on-ic-680064b06320
+
+# ICP-Lottery-DApp
+
+Simple lottery caninster built on the ICP network,
+
+- It allows any player to be able to start the lottery, buy tickets and even end the lottery.
+- Players can then check to see if they're the lucky winners of that lottery.
+- Winner gets half of the prizepool.
+
 
 ## How to deploy canisters implemented in the course
 
