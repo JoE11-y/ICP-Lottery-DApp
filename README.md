@@ -45,10 +45,10 @@ Simple lottery caninster built on the ICP network.
 
 This next step shows how to fund your wallet with the tokens from the newly deployed Ledger canister.
 
-- Copy your wallet ledger identifier from the frontend of lottery.
+- Copy your wallet ledger identifier from the frontend of lottery. This can be found in the wallet icon.
 - Run the faucet script
 
     ```bash
-    # npm run get:tokens <wallet identifier>
-    npm run get:tokens 123525952y5y2835y235788238527358235823857
+    # npm run get:tokens <amount in e8s> </amount> <wallet identifier>
+    npm run get:tokens 5_0000_0000 123525952y5y2835y235788238527358235823857
     ```
