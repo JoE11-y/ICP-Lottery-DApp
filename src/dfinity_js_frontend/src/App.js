@@ -39,7 +39,7 @@ const App = function AppWrapper() {
     <>
     <Notification />
       {isAuthenticated ? (
-        <Container fluid="md">
+        <Container fluid="md" className="hero">
           <Nav className="justify-content-end pt-3 pb-5">
             <Nav.Item>
               <Wallet
@@ -52,12 +52,18 @@ const App = function AppWrapper() {
               />
             </Nav.Item>
           </Nav>
+          <div className="header">
+            <p className="title light">ICP Lottery DApp</p>
+            <p className="subtitle light">
+              A lottery platform built on the ICP Blockchain 🔦
+            </p>
+          </div>
           <main>
             <Lottery fetchBalance={getBalance()}/>
           </main>
         </Container>
       ) : (
-        <Cover name="Algorand Lottery DApp" login={login} coverImg={coverImg} />
+        <Cover name="ICP Lottery DApp" login={login} coverImg={coverImg} />
       )}
     </>
   );

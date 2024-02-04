@@ -5,7 +5,7 @@ import { convertTime } from "../../utils/conversions";
 
 const PrevRounds = ({ Lotteries, checkIfWinner, lotteryConfig }) => {
   const principal = window.auth.principalText;
-
+  
   const [loading, setLoading] = useState(false);
 
   const [position, setPosition] = useState(Lotteries.length - 2);
@@ -75,9 +75,9 @@ const PrevRounds = ({ Lotteries, checkIfWinner, lotteryConfig }) => {
                     : 
                       "Check if you're the winner" 
                   }
-                  {(lottery.winner && lottery.winner !== principal) && (
+                  {(lottery.winner.length > 0 && lottery.winner[0] !== principal) && (
                     <a
-                      href={`https://testnet.algoexplorer.io/address/${lottery.winner}`}
+                      href={`https://testnet.algoexplorer.io/address/${lottery.winner[0]}`}
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -89,8 +89,8 @@ const PrevRounds = ({ Lotteries, checkIfWinner, lotteryConfig }) => {
               <div className="lottery-body">
                 <p>
                   <strong>Price Per Ticket: </strong>{" "}
-                  {lotteryConfig.ticketPrice
-                    ? (lotteryConfig.ticketPrice / BigInt(10**8)).toString()
+                  {lotteryConfig.ticketPrice.length > 0
+                    ? (lotteryConfig.ticketPrice[0] / BigInt(10**8)).toString()
                     : 0}{" "}
                   ICP
                 </p>
@@ -104,7 +104,7 @@ const PrevRounds = ({ Lotteries, checkIfWinner, lotteryConfig }) => {
                 </p>
                 <p>
                   <strong>Prize: </strong>{" "}
-                  {(lottery.reward / BigInt(10**8)).toString()} ICP
+                  {(lottery.reward[0] / BigInt(10**8)).toString()} ICP
                 </p>
                 <p>
                   <strong>Your Tickets: </strong>

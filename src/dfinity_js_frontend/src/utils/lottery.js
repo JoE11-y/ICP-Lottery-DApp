@@ -54,3 +54,27 @@ export async function endLottery(id){
 export async function checkIfWinner(id){
     return window.canister.lottery.checkIfWinner(id);
 }
+
+export function checkStatus(status, endTime) {
+    const now = new Date();
+    const end = new Date((endTime / 1000000n).toString());
+  
+    if (status === 1 && endTime !== 0 && now > end) {
+      return "TIME EXHAUSTED";
+    } else {
+      switch (status) {
+        case 0: {
+          return "START LOTTERY";
+        }
+        case 1: {
+          return "LOTTERY IS ACTIVE";
+        }
+        case 2: {
+          return "LOTTERY ENDED, CLAIM TO CHECK IF YOU WON";
+        }
+        case 3: {
+          return "WINNERS AWARDED";
+        }
+      }
+    }
+  }

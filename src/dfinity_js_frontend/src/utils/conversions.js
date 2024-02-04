@@ -3,7 +3,7 @@ export const convertTime = (nanosecs) => {
       return "--";
     }
   
-    let dateObj = new Date(nanosecs / 1000000);
+    let dateObj = new Date((nanosecs / 1000000n).toString());
   
     let date = dateObj.toLocaleDateString("en-us", {
       weekday: "short",
@@ -27,6 +27,4 @@ export const truncateAddress = (address) => {
       address.slice(address.length - 5, address.length)
     );
   };
-  
-  
   

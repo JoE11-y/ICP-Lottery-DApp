@@ -3,6 +3,7 @@ service: (record {lotteryDuration:nat64; ticketPrice:nat64}) -> {
     createTicketOrder: (record {lotteryId:int32; noOfTickets:int32}) -> (variant {Ok:record {status:variant {PaymentPending:text; Completed:text}; memo:nat64; lotteryId:text; amount:nat64; ticketBuyer:principal; paid_at_block:opt nat64}; Err:variant {PaymentFailed:text; NotFound:text; NotWinner:text; ConfigError:text; PaymentCompleted:text; StateError:text}});
     deleteLottery: (int32) -> (variant {Ok:text; Err:variant {PaymentFailed:text; NotFound:text; NotWinner:text; ConfigError:text; PaymentCompleted:text; StateError:text}});
     endLottery: (int32) -> (variant {Ok:text; Err:variant {PaymentFailed:text; NotFound:text; NotWinner:text; ConfigError:text; PaymentCompleted:text; StateError:text}});
+    getAddressFromPrincipal: (principal) -> (text) query;
     getCanisterAddress: () -> (text) query;
     getLotteries: () -> (vec record {id:int32; startTime:nat64; reward:opt nat64; endTime:nat64; winner:opt principal; winningTicket:opt int32; players:vec record {id:int32; tickets:vec int32; player:principal; lotteryId:int32}; noOfTickets:int32; lotteryCompleted:int32}) query;
     getLottery: (int32) -> (variant {Ok:record {id:int32; startTime:nat64; reward:opt nat64; endTime:nat64; winner:opt principal; winningTicket:opt int32; players:vec record {id:int32; tickets:vec int32; player:principal; lotteryId:int32}; noOfTickets:int32; lotteryCompleted:int32}; Err:variant {PaymentFailed:text; NotFound:text; NotWinner:text; ConfigError:text; PaymentCompleted:text; StateError:text}}) query;

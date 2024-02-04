@@ -90,7 +90,7 @@ export default Canister({
             winningTicket: None,
             reward: None,
             players: [],
-            lotteryCompleted: 0
+            lotteryCompleted: 1
         };
 
         // store lottery
@@ -181,7 +181,8 @@ export default Canister({
         if ('None' in prizePool){
             prizePool = Some(amountPaid)
         }else{
-            prizePool.Some += amountPaid;
+            let init = prizePool.Some;
+            prizePool = Some(init + amountPaid);
         }
 
         // get lottery and add tickets
@@ -311,15 +312,18 @@ export default Canister({
         const randomValue = Math.random() * ticketsSold;
         let winningTicket = Math.floor(randomValue);
 
-        // update record in storage and set lottery completed status to 1 i.e. waiting for payouts
+        // update record in storage and set lottery completed status to 2 i.e. waiting for payouts
         const updatedLottery = { 
             ...lottery,
             winningTicket: Some(winningTicket),
-            lotteryCompleted: 1
+            lotteryCompleted: 2
         };
 
         // update records
         lotteryStorage.insert(lottery.id, updatedLottery);
+
+        // reset lottery state so new lottery can be started
+        lotteryState = Some(0);
 
         return Ok("lottery ended, winner can claim now.");
     }),
@@ -328,11 +332,6 @@ export default Canister({
         // check lottery state, and fail if state is not initialized
         if ('None' in lotteryState){
             return Err({ ConfigError: "lottery not yet initialized"});
-        }
-
-        // only start lottery if state has been set to 1 i.e payout
-        if (lotteryState.Some !== 1){
-            return Err({ StateError: "lottery not yet ended, check lottery state"});
         }
 
         // get caller
@@ -346,7 +345,9 @@ export default Canister({
         // calculate winners reward
         const winnersReward = prizePool.Some / 2n;
 
-        prizePool.Some -= winnersReward;
+        const initial = prizePool.Some;
+
+        prizePool = Some(initial - winnersReward);
 
         // get lottery and add tickets
         const lotteryOpt = lotteryStorage.get(id);
@@ -356,8 +357,8 @@ export default Canister({
 
         const lottery = lotteryOpt.Some;
 
-        if(lottery.lotteryCompleted === 2){
-            return Err({StateError: "winner already selected"})
+        if(lottery.lotteryCompleted !== 2){
+            return Err({StateError: "cannot check if winner yet"})
         }
 
         let playerPosn: int32;
@@ -414,7 +415,7 @@ export default Canister({
         const updatedLottery = { 
             ...lottery,
             winner: playerInfo.player,
-            lotteryCompleted: 2,
+            lotteryCompleted: 3,
             rewards: winnersReward
         };
 
@@ -429,6 +430,14 @@ export default Canister({
     getCanisterAddress: query([], text, () => {
         let canisterPrincipal = ic.id();
         return hexAddressFromPrincipal(canisterPrincipal, 0);
+    }),
+
+    /*
+        a helper function to get address from the principal
+        the address is later used in the transfer method
+    */
+    getAddressFromPrincipal: query([Principal], text, (principal) => {
+        return hexAddressFromPrincipal(principal, 0);
     }),
 
     getOrders: query([], Vec(Order), () => {

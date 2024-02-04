@@ -1,20 +1,20 @@
 
 /// values for dummy contract
 let id = 0;
-let startTime = 0;
-let endTime = 0;
+let startTime = 0n;
+let endTime = 0n;
 let noOfTickets = 0;
-let winner = null;
-let winningTicket = null;
-let reward = null;
+let winner = [];
+let winningTicket = [];
+let reward = [];
 let players = [];
 let lotteryCompleted = 0;
 
-let currlotteryId = 0;
-let lotteryState = 0;
-let ticketPrice = 0;
-let lotteryDuration = 0;
-let prizePool = 0;
+let currlotteryId = [0];
+let lotteryState = [0];
+let ticketPrice = [0n];
+let lotteryDuration = [0n];
+let prizePool = [0n];
 
 export class Lottery {
     constructor(
@@ -63,6 +63,7 @@ export const dummyLottery = new Lottery(
     noOfTickets,
     winner,
     winningTicket,
+    reward,
     players,
     lotteryCompleted
 );
