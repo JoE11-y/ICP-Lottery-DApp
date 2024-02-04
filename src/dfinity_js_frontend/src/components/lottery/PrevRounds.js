@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import Loader from "../ui/Loader";
+import Loader from "../utils/Loader";
 import { Button } from "react-bootstrap";
-import { convertTime, microAlgosToString } from "../../utils/conversions";
+import { convertTime } from "../../utils/conversions";
 
 const PrevRounds = ({ Lotteries, checkIfWinner, lotteryConfig }) => {
   const principal = window.auth.principalText;
@@ -12,7 +12,6 @@ const PrevRounds = ({ Lotteries, checkIfWinner, lotteryConfig }) => {
 
   const [lottery, setLottery] = useState(Lotteries[position]);
 
-  const userOptedIn = () => lottery.user_id !== 0;
 
   const previousLottery = async (e) => {
     setLoading(true);

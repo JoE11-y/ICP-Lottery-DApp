@@ -8,7 +8,7 @@ import { NotificationSuccess, NotificationError } from "../utils/Notifications";
 import * as lottery from '../../utils/lottery'
 import { dummyLottery  } from "../../utils/constants";
 
-const Lottery = ({ address, fetchBalance }) => {
+const Lottery = ({ fetchBalance }) => {
   const [loading, setLoading] = useState(false);
   const [lotteries, setLotteries] = useState([]);
   const [currentLottery, setCurrentLottery] = useState({});
@@ -62,8 +62,9 @@ const Lottery = ({ address, fetchBalance }) => {
       await lottery.startLottery().then((resp) => {
         getLotteries();
          // add fetch balance here
+        fetchBalance();
+        toast(<NotificationSuccess text="New lottery session started successfully." />);
       });
-      toast(<NotificationSuccess text="New lottery session started successfully." />);
     } catch(error) {
       console.log({ error });
       toast(<NotificationError text="Failed to start new lottery session." />);
@@ -79,8 +80,9 @@ const Lottery = ({ address, fetchBalance }) => {
       await lottery.buyTickets({lotteryId, noOfTickets}).then((resp) => {
         getLotteries();
         // add fetch balance here
+        fetchBalance();
+        toast(<NotificationSuccess text="Tickets bought successfully." />);
       });
-      toast(<NotificationSuccess text="Tickets bought successfully." />);
     } catch(error) {
       console.log({ error });
       toast(<NotificationError text="Failed to buy tickets." />);
@@ -96,8 +98,9 @@ const Lottery = ({ address, fetchBalance }) => {
       await lottery.endLottery(id).then((resp) => {
         getLotteries();
         // add fetch balance here
+        fetchBalance();
+        toast(<NotificationSuccess text="Lottery session ended successfully." />);
       });
-      toast(<NotificationSuccess text="Lottery session ended successfully." />);
     } catch(error) {
       console.log({ error });
       toast(<NotificationError text="Failed to end Lottery" />);
@@ -113,8 +116,9 @@ const Lottery = ({ address, fetchBalance }) => {
       await lottery.checkIfWinner(id).then((resp) => {
         getLotteries();
         // add fetch balance here
+        fetchBalance();
+        toast(<NotificationSuccess text="Check completed" />);
       });
-      toast(<NotificationSuccess text="Check completed" />);
     } catch(error) {
       console.log({ error });
       toast(<NotificationError text="Check failed" />);
@@ -125,7 +129,7 @@ const Lottery = ({ address, fetchBalance }) => {
 
   const lotteryEnded = () => {
     let now = new Date();
-    let lotteryEndTime = new Date(currentLottery.endTime * 1000);
+    let lotteryEndTime = new Date(currentLottery.endTime / 1000000);
     return now >= lotteryEndTime;
   };
 

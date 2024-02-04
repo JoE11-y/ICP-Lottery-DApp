@@ -54,8 +54,11 @@ export default Canister({
 
         // set lottery config parameters
         lotteryState = Some(0);
-        ticketPrice = Some(payload.ticketPrice);
-        lotteryDuration = Some(payload.lotteryDuration);
+        ticketPrice = Some(payload.ticketPrice); 
+
+        // lottery duration is passed in minutes for testing
+        const timeInNanoSeconds = BigInt(60 * 1000000000);
+        lotteryDuration = Some(payload.lotteryDuration * timeInNanoSeconds);
     }),
 
     startLottery: update([], Result(Lottery, Message), () => {

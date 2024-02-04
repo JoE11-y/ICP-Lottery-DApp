@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Modal, Button, Form, FloatingLabel } from "react-bootstrap";
-import { microAlgosToString } from "../../utils/conversions";
 
 const BuyTicketForm = ({ lottery, open, onClose, buyTicket, ticketPrice }) => {
   const [amount, setAmount] = useState(0);

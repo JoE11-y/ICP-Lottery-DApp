@@ -1,7 +1,8 @@
 import React from "react";
 import { Dropdown, Stack } from "react-bootstrap";
+import { truncateAddress } from "../utils/conversions";
 
-const Wallet = ({ principal, balance, symbol, isAuthenticated, destroy }) => {
+const Wallet = ({ principal, dfxAddress, balance, symbol, isAuthenticated, destroy }) => {
   if (isAuthenticated) {
     return (
       <>
@@ -18,8 +19,15 @@ const Wallet = ({ principal, balance, symbol, isAuthenticated, destroy }) => {
           <Dropdown.Menu className="shadow-lg border-0">
             <Dropdown.Item>
               <Stack direction="horizontal" gap={2}>
-                <i className="bi bi-person-circle fs-4" />
-                <span className="font-monospace">{principal}</span>
+                Principal:
+                <span className="font-monospace">{truncateAddress(principal)}</span>
+              </Stack>
+            </Dropdown.Item>
+
+            <Dropdown.Item>
+              <Stack direction="horizontal" gap={2}>
+                DFx Address
+                <span className="font-monospace">{truncateAddress(dfxAddress)}</span>
               </Stack>
             </Dropdown.Item>
 

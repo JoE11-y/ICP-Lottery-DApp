@@ -15,7 +15,9 @@
     "deploy:local": "dfx deploy --network=local",
     "deploy:ic": "dfx deploy --network=ic",
     "generate": "dfx generate dfinity_js_backend",
-    "gen-deploy:local": "dfx generate dfinity_js_backend && dfx deploy --network=local"
+    "gen-deploy:local": "dfx generate dfinity_js_backend && dfx deploy --network=local",
+    "deploy:ledger": "./scripts/deploy-local-ledger.sh",
+    "get:tokens": "./scripts/run-faucet.sh"
   },
   "dependencies": {
     "@dfinity/agent": "^0.19.2",

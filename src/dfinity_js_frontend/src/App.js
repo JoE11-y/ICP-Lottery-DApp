@@ -5,7 +5,7 @@ import "./App.css";
 import Wallet from "./components/Wallet";
 import coverImg from "./assets/img/balls.png";
 import { login, logout as destroy } from "./utils/auth";
-import { balance as principalBalance } from "./utils/ledger"
+import { balance as principalBalance, getDfxAddress } from "./utils/ledger"
 import Cover from "./components/utils/Cover";
 import { Notification } from "./components/utils/Notifications";
 
@@ -16,6 +16,7 @@ const App = function AppWrapper() {
   const principal = window.auth.principalText;
 
   const [balance, setBalance] = useState("0");
+  const [address, setAddress] = useState("0x");
 
   const getBalance = useCallback(async () => {
     if (isAuthenticated) {
@@ -23,9 +24,16 @@ const App = function AppWrapper() {
     }
   });
 
+  const getAddress = useCallback(async () => {
+    if (isAuthenticated) {
+      setAddress(await getDfxAddress());
+    }
+  });
+
   useEffect(() => {
     getBalance();
-  }, [getBalance]);
+    getAddress();
+  }, [getBalance, getAddress()]);
 
   return (
     <>
@@ -36,6 +44,7 @@ const App = function AppWrapper() {
             <Nav.Item>
               <Wallet
                 principal={principal}
+                dfxAddress={address}
                 balance={balance}
                 symbol={"ICP"}
                 isAuthenticated={isAuthenticated}
@@ -44,7 +53,7 @@ const App = function AppWrapper() {
             </Nav.Item>
           </Nav>
           <main>
-            <Lottery />
+            <Lottery fetchBalance={getBalance()}/>
           </main>
         </Container>
       ) : (
