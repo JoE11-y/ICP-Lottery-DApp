@@ -7,6 +7,7 @@ import Loader from "../utils/Loader";
 import { NotificationSuccess, NotificationError } from "../utils/Notifications";
 import * as lottery from '../../utils/lottery'
 import { dummyLottery, initLotteryConfig  } from "../../utils/constants";
+import { convertTime } from "../../utils/conversions";
 
 const Lottery = ({ fetchBalance }) => {
   const [loading, setLoading] = useState(false);
@@ -298,7 +299,7 @@ const Lottery = ({ fetchBalance }) => {
 
       {open && (
         <BuyTicketForm
-          lottery={currentLottery}
+          lotteryId={currentLottery.id}
           open={open}
           onClose={() => openModal(false)}
           buyTicket={buyTicket}

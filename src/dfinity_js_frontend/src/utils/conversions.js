@@ -2,9 +2,9 @@ export const convertTime = (nanosecs) => {
     if (nanosecs === 0) {
       return "--";
     }
-  
-    let dateObj = new Date((nanosecs / 1000000n).toString());
-  
+
+    const milisecs = Number(nanosecs / BigInt(10**6));
+    let dateObj = new Date(milisecs);
     let date = dateObj.toLocaleDateString("en-us", {
       weekday: "short",
       year: "numeric",

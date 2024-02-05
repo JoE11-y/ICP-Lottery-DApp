@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Modal, Button, Form, FloatingLabel } from "react-bootstrap";
 
-const BuyTicketForm = ({ lottery, open, onClose, buyTicket, ticketPrice }) => {
+const BuyTicketForm = ({ lotteryId, open, onClose, buyTicket, ticketPrice }) => {
   const [amount, setAmount] = useState(0);
   const [noOfTickets, setTicketNumber] = useState(0);
   const handleClose = () => {
@@ -19,7 +19,7 @@ const BuyTicketForm = ({ lottery, open, onClose, buyTicket, ticketPrice }) => {
     if (!noOfTickets) {
       return;
     }
-    buyTicket(lottery, noOfTickets);
+    buyTicket(Number(lotteryId), Number(noOfTickets));
     handleClose();
   }
 

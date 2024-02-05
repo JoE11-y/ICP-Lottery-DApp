@@ -35,7 +35,7 @@ export const OrderStatus = Variant({
 });
 
 export const Order = Record({
-    lotteryId: text,
+    lotteryId: int32,
     amount: nat64,
     status: OrderStatus,
     ticketBuyer: Principal,
