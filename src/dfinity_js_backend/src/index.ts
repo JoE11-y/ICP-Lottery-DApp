@@ -316,31 +316,46 @@ export default Canister({
         if ('None' in prizePool){
             return Err({ ConfigError: "lottery pool is empty, please try again later."});
         }
-        const pool = prizePool.Some;
-        // calculate winners reward
-        const winnersReward = pool / 2n;
 
-        prizePool = Some(pool - winnersReward);
-        // get random number as winning tickets
-        let ticketsSold = lottery.noOfTickets;
-        const randomValue = Math.random() * ticketsSold;
-        let winningTicket = Math.floor(randomValue);
+        // check if tickets are sold, then calculate rewards
+        if (lottery.noOfTickets > 1){
 
-        // update record in storage and set lottery completed status to 2 i.e. waiting for payouts
-        const updatedLottery = { 
-            ...lottery,
-            winningTicket: Some(winningTicket),
-            lotteryCompleted: 2,
-            reward: Some(winnersReward)
-        };
+            const pool = prizePool.Some;
+            // calculate winners reward
+            const winnersReward = pool / 2n;
+    
+            prizePool = Some(pool - winnersReward);
+            // get random number as winning tickets
+            let ticketsSold = lottery.noOfTickets;
+            const randomValue = Math.random() * ticketsSold;
+            let winningTicket = Math.floor(randomValue);
+    
+            // update record in storage and set lottery completed status to 2 i.e. waiting for payouts
+            const updatedLottery = { 
+                ...lottery,
+                winningTicket: Some(winningTicket),
+                lotteryCompleted: 2,
+                reward: Some(winnersReward)
+            };
+    
+            // update records
+            lotteryStorage.insert(lottery.id, updatedLottery);
+            
+        }else{
+            // update record in storage and set lottery completed status to 2 i.e. waiting for payouts
+            const updatedLottery = { 
+                ...lottery,
+                lotteryCompleted: 2,
+            };
 
-        // update records
-        lotteryStorage.insert(lottery.id, updatedLottery);
+            // update records
+            lotteryStorage.insert(lottery.id, updatedLottery);
+        }
 
         // reset lottery state so new lottery can be started
         lotteryState = Some(0);
 
-        return Ok("lottery ended, winner can claim now.");
+        return Ok("lottery ended");
     }),
 
     checkIfWinner: update([int32], Result(text, Message), async (id) => {
