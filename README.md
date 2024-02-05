@@ -54,3 +54,5 @@ This next step shows how to fund your wallet with the tokens from the newly depl
     
     # N/B: This sends 5 ICP tokens to the address.
     ```
+
+    ![gettokens](./assets/getTokens.gif)
