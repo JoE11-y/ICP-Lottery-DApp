@@ -49,6 +49,8 @@ This next step shows how to fund your wallet with the tokens from the newly depl
 - Run the faucet script
 
     ```bash
-    # npm run get:tokens <amount in e8s> </amount> <wallet identifier>
+    # npm run get:tokens <amount in e8s> <amount> <wallet address>
     npm run get:tokens 5_0000_0000 123525952y5y2835y235788238527358235823857
+    
+    # N/B: This sends 5 ICP tokens to the address.
     ```
