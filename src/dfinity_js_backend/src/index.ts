@@ -312,8 +312,8 @@ export default Canister({
             return Err({StateError: "lottery not yet completed"})
         }
 
-         // get and update prizepool
-         if ('None' in prizePool){
+        // get and update prizepool
+        if ('None' in prizePool){
             return Err({ ConfigError: "lottery pool is empty, please try again later."});
         }
         const pool = prizePool.Some;
@@ -331,7 +331,7 @@ export default Canister({
             ...lottery,
             winningTicket: Some(winningTicket),
             lotteryCompleted: 2,
-            reward: winnersReward
+            reward: Some(winnersReward)
         };
 
         // update records
@@ -360,7 +360,11 @@ export default Canister({
 
         const lottery = lotteryOpt.Some;
 
-        const reward = lottery.reward;
+        // check if reward is set
+        if('None' in lottery.reward){
+            return Err({LotteryError: "reward not set"})
+        }
+        const reward = lottery.reward.Some;
 
         if(lottery.lotteryCompleted !== 2){
             return Err({StateError: "cannot check if winner yet"})
@@ -405,11 +409,14 @@ export default Canister({
         // else continue and get player info
         const playerInfo = lottery.players[playerPosn - 1];
 
+        // check if lottery winning ticket is set
+        if('None' in lottery.winningTicket){
+            return Err({LotteryError: "winning ticket not set"})
+        }
+
         // check if player tickets for that lottery contains the winning ticket
-        if(playerInfo.tickets.includes(lottery.winningTicket)){
-            // initiate payout to winner
-            // send ticket payment to icp contract
-            // await tokenCanister.transfer(lotteryCanister, caller.toString(), winnersReward).call();   
+        if(playerInfo.tickets.includes(lottery.winningTicket.Some)){
+            // initiate payout to winner  
             await makePayment(playerInfo.player, reward);
 
         }else{
@@ -419,9 +426,8 @@ export default Canister({
         // update record in storage and set lottery completed status to payout completed
         const updatedLottery = { 
             ...lottery,
-            winner: playerInfo.player,
+            winner: Some(playerInfo.player),
             lotteryCompleted: 3,
-           
         };
 
         lotteryStorage.insert(lottery.id, updatedLottery);
@@ -514,7 +520,7 @@ async function makePayment(winner: Principal, amount: nat64) {
         args: [{
             memo: 0n,
             amount: {
-                e8s: amount
+                e8s: amount - transferFeeResponse.transfer_fee.e8s
             },
             fee: {
                 e8s: transferFeeResponse.transfer_fee.e8s

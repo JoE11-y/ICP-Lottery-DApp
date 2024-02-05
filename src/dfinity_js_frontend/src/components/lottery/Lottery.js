@@ -58,6 +58,12 @@ const Lottery = ({ fetchBalance, principal }) => {
     try{
       setLoading(true);
       await lottery.startLottery().then((resp) => {
+        if (resp && resp.Err){
+          let error = Object.entries(resp.Err);
+          let errorMsg = `${error[0][0]} : ${error[0][1]}`;
+          toast(<NotificationError text={errorMsg} />);
+          return
+        }
         getLotteries();
         getLotteryConfig();
         toast(<NotificationSuccess text="New lottery session started successfully." />);
@@ -75,7 +81,12 @@ const Lottery = ({ fetchBalance, principal }) => {
     try{
       setLoading(true);
       await lottery.buyTickets({lotteryId, noOfTickets}).then((resp) => {
-        console.log(resp);
+        if (resp && resp.Err){
+          let error = Object.entries(resp.Err);
+          let errorMsg = `${error[0][0]} : ${error[0][1]}`;
+          toast(<NotificationError text={errorMsg} />);
+          return
+        }
         getLotteries();
         getLotteryConfig();
         // add fetch balance here
@@ -95,6 +106,12 @@ const Lottery = ({ fetchBalance, principal }) => {
     try{
       setLoading(true);
       await lottery.endLottery(id).then((resp) => {
+        if (resp && resp.Err){
+          let error = Object.entries(resp.Err);
+          let errorMsg = `${error[0][0]} : ${error[0][1]}`;
+          toast(<NotificationError text={errorMsg} />);
+          return
+        }
         getLotteries();
         getLotteryConfig();
         // add fetch balance here
@@ -114,11 +131,17 @@ const Lottery = ({ fetchBalance, principal }) => {
     try{
       setLoading(true);
       await lottery.checkIfWinner(id).then((resp) => {
+        if (resp && resp.Err){
+          let error = Object.entries(resp.Err);
+          let errorMsg = `${error[0][0]} : ${error[0][1]}`;
+          toast(<NotificationError text={errorMsg} />);
+          return
+        }
         getLotteries();
         getLotteryConfig();
         // add fetch balance here
         fetchBalance();
-        toast(<NotificationSuccess text="Check completed" />);
+        toast(<NotificationSuccess text="Congrats you won" />);
       });
     } catch(error) {
       console.log({ error });

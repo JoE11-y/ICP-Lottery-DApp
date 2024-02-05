@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Loader from "../utils/Loader";
 import { Button } from "react-bootstrap";
 import { convertTime } from "../../utils/conversions";
+import { Principal } from "@dfinity/principal";
 
 const PrevRounds = ({ Lotteries, checkIfWinner, lotteryConfig, getPlayerTickets }) => {
   const principal = window.auth.principalText;
@@ -69,8 +70,8 @@ const PrevRounds = ({ Lotteries, checkIfWinner, lotteryConfig, getPlayerTickets 
                 </p>
                 <p>
                   <strong>Winner: </strong>
-                  {lottery.winner? 
-                    lottery.winner === principal? 
+                  {lottery.winner.length > 0? 
+                    Principal.from(lottery.winner[0]).toText() === principal? 
                       "Congratulations you won" :  "Sorry you lost, try again" 
                     : 
                       "Check if you're the winner" 
@@ -104,7 +105,7 @@ const PrevRounds = ({ Lotteries, checkIfWinner, lotteryConfig, getPlayerTickets 
                 </p>
                 <p>
                   <strong>Prize: </strong>{" "}
-                  {lotteryConfig.reward.length > 0 ? (lottery.reward[0] / BigInt(10**8)).toString() : 0 }ICP
+                  {lottery.reward.length > 0 ? (lottery.reward[0] / BigInt(10**8)).toString() : 0 }ICP
                 </p>
                 <p>
                   <strong>Your Tickets: </strong>
@@ -112,7 +113,7 @@ const PrevRounds = ({ Lotteries, checkIfWinner, lotteryConfig, getPlayerTickets 
                 </p>
               </div>
               <div className="lottery-footer">
-                {!lottery.winner && (
+                {!lottery.winner.length > 0 && (
                   <Button
                     variant="success"
                     className="check-if-winner"

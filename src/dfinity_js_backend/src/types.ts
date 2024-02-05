@@ -49,7 +49,8 @@ export const Message = Variant({
     NotFound: text,
     PaymentFailed: text,
     PaymentCompleted: text,
-    NotWinner: text
+    NotWinner: text,
+    LotteryError: text
 });
 
 export const LotteryConfiguration = Record({
