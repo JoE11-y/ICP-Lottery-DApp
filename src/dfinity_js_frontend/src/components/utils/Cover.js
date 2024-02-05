@@ -17,7 +17,7 @@ const Cover = ({ title, login, coverImg }) => {
             <img src={coverImg} alt="" />
           </div>
           <h1>{title}</h1>
-          <p>Please connect your wallet to continue.</p>
+          <p style={{ color: "white" }}>Please connect your wallet to continue.</p>
           <Button
             onClick={login}
             variant="outline-light"

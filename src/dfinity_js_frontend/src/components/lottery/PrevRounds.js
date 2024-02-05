@@ -3,7 +3,7 @@ import Loader from "../utils/Loader";
 import { Button } from "react-bootstrap";
 import { convertTime } from "../../utils/conversions";
 
-const PrevRounds = ({ Lotteries, checkIfWinner, lotteryConfig }) => {
+const PrevRounds = ({ Lotteries, checkIfWinner, lotteryConfig, getPlayerTickets }) => {
   const principal = window.auth.principalText;
   
   const [loading, setLoading] = useState(false);
@@ -104,11 +104,11 @@ const PrevRounds = ({ Lotteries, checkIfWinner, lotteryConfig }) => {
                 </p>
                 <p>
                   <strong>Prize: </strong>{" "}
-                  {(lottery.reward[0] / BigInt(10**8)).toString()} ICP
+                  {lotteryConfig.reward.length > 0 ? (lottery.reward[0] / BigInt(10**8)).toString() : 0 }ICP
                 </p>
                 <p>
                   <strong>Your Tickets: </strong>
-                  {/* {lottery.user_no_of_tickets} */}
+                  {getPlayerTickets(lottery.players)}
                 </p>
               </div>
               <div className="lottery-footer">

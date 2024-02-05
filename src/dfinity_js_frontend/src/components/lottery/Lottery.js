@@ -6,10 +6,11 @@ import BuyTicketForm from "./BuyTicketForm";
 import Loader from "../utils/Loader";
 import { NotificationSuccess, NotificationError } from "../utils/Notifications";
 import * as lottery from '../../utils/lottery'
-import { dummyLottery, initLotteryConfig  } from "../../utils/constants";
+import { dummyLottery, dummyPlayerInfo, initLotteryConfig  } from "../../utils/constants";
 import { convertTime } from "../../utils/conversions";
+import { Principal } from "@dfinity/principal";
 
-const Lottery = ({ fetchBalance }) => {
+const Lottery = ({ fetchBalance, principal }) => {
   const [loading, setLoading] = useState(false);
   const [lotteries, setLotteries] = useState([]);
   const [currentLottery, setCurrentLottery] = useState(dummyLottery);
@@ -58,8 +59,7 @@ const Lottery = ({ fetchBalance }) => {
       setLoading(true);
       await lottery.startLottery().then((resp) => {
         getLotteries();
-         // add fetch balance here
-        fetchBalance();
+        getLotteryConfig();
         toast(<NotificationSuccess text="New lottery session started successfully." />);
       });
     } catch(error) {
@@ -75,7 +75,9 @@ const Lottery = ({ fetchBalance }) => {
     try{
       setLoading(true);
       await lottery.buyTickets({lotteryId, noOfTickets}).then((resp) => {
+        console.log(resp);
         getLotteries();
+        getLotteryConfig();
         // add fetch balance here
         fetchBalance();
         toast(<NotificationSuccess text="Tickets bought successfully." />);
@@ -94,6 +96,7 @@ const Lottery = ({ fetchBalance }) => {
       setLoading(true);
       await lottery.endLottery(id).then((resp) => {
         getLotteries();
+        getLotteryConfig();
         // add fetch balance here
         fetchBalance();
         toast(<NotificationSuccess text="Lottery session ended successfully." />);
@@ -112,6 +115,7 @@ const Lottery = ({ fetchBalance }) => {
       setLoading(true);
       await lottery.checkIfWinner(id).then((resp) => {
         getLotteries();
+        getLotteryConfig();
         // add fetch balance here
         fetchBalance();
         toast(<NotificationSuccess text="Check completed" />);
@@ -126,9 +130,22 @@ const Lottery = ({ fetchBalance }) => {
 
   const lotteryEnded = () => {
     let now = new Date();
-    let lotteryEndTime = new Date((currentLottery.endTime / 1000000n).toString());
+    let lotteryEndTime = new Date(Number(currentLottery.endTime / BigInt(10**6)));
+    console.log(now >=lotteryEndTime)
     return now >= lotteryEndTime;
   };
+
+  const getPlayerTickets = (players) => {
+    let playerInfo = dummyPlayerInfo;
+    for (let i of players){
+      let playerPrincipalText = Principal.from(i.player).toText();
+      if (playerPrincipalText === principal){
+        playerInfo = i;
+        break;
+      }
+    }
+    return playerInfo.tickets.length;
+  }
 
   const checkLotteryState = (num) => lotteryConfig.lotteryState[0] === num;
 
@@ -154,7 +171,7 @@ const Lottery = ({ fetchBalance }) => {
   // same checks as the handle action
   const handleMessage = () => {
     if (checkLotteryState(0)) {
-      return "Start Lottery";
+      return "Start New Lottery";
     } else if (checkLotteryState(1) && !lotteryEnded()) {
         return "Buy Tickets";
     } else if (checkLotteryState(1) && lotteryEnded()) {
@@ -162,7 +179,6 @@ const Lottery = ({ fetchBalance }) => {
     }
   };
 
-  const principal = window.auth.principalText;
   console.log(lotteries, currentLottery, lotteryConfig);
 
   useEffect(() => {
@@ -203,7 +219,7 @@ const Lottery = ({ fetchBalance }) => {
                     <strong>
                       {checkLotteryCompleted(0)
                         ? "Lottery Duration: Not started"
-                        : checkLotteryCompleted(1)
+                        : checkLotteryCompleted(1) && !lotteryEnded()
                         ? "Lottery Ends: "
                         : "Lottery Ended: "}
                     </strong>{" "}
@@ -265,16 +281,14 @@ const Lottery = ({ fetchBalance }) => {
                 </p>
                 <p>
                   <strong>Prize: </strong>{" "}
-                  {currentLottery.reward.length > 0
-                    ? (currentLottery.reward[0] / BigInt(10**8)).toString()
-                    : lotteryConfig.prizePool.length > 0 && lotteryConfig.prizePool[0] > 0
-                    ? (lotteryConfig.prizePool[0] / BigInt(10**8)).toString()
+                  { lotteryConfig.prizePool.length > 0 && lotteryConfig.prizePool[0] > 0
+                    ? (lotteryConfig.prizePool[0] / BigInt(2 * 10**8)).toString()
                     : 0}{" "}
                   ICP
                 </p>
                 <p>
                   <strong>Your Tickets: </strong>
-                  {/* {currentLottery.user_no_of_tickets} */}
+                  {getPlayerTickets(currentLottery.players)}
                 </p>
               </div>
               <div className="lottery-footer">
@@ -290,7 +304,12 @@ const Lottery = ({ fetchBalance }) => {
           </div>
 
           {lotteries.length > 1 && (
-            <PrevRounds Lotteries={lotteries} checkIfWinner={checkIfWinner} />
+            <PrevRounds 
+              Lotteries={lotteries} 
+              checkIfWinner={checkIfWinner} 
+              lotteryConfig={lotteryConfig} 
+              getPlayerTickets={getPlayerTickets}
+            />
           )}
         </>
       ) : (

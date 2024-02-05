@@ -16,6 +16,11 @@ let ticketPrice = [0n];
 let lotteryDuration = [0n];
 let prizePool = [0n];
 
+let lotteryId = 0;
+let player = "";
+let tickets = [];
+
+
 export class Lottery {
     constructor(
         id,
@@ -56,6 +61,20 @@ export class LotteryConfig {
     }
 }
 
+export class PlayerInfo {
+    constructor(
+        id,
+        lotteryId,
+        player,
+        tickets
+    ){
+        this.id = id;
+        this.lotteryId = lotteryId;
+        this.player = player;
+        this.tickets = tickets;
+    }
+}
+
 export const dummyLottery = new Lottery(
     id,
     startTime,
@@ -75,4 +94,11 @@ export const initLotteryConfig = new LotteryConfig(
     ticketPrice,
     lotteryDuration,
     prizePool
+)
+
+export const dummyPlayerInfo = new PlayerInfo(
+    id,
+    lotteryId,
+    player,
+    tickets
 )

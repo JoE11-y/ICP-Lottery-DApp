@@ -59,7 +59,7 @@ const App = function AppWrapper() {
             </p>
           </div>
           <main>
-            <Lottery fetchBalance={getBalance}/>
+            <Lottery fetchBalance={getBalance} principal={principal}/>
           </main>
         </Container>
       ) : (

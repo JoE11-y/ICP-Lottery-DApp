@@ -24,7 +24,7 @@ const ORDER_RESERVATION_PERIOD = 120n; // reservation period in seconds
 
 
 // custom configuration settings
-let currlotteryId : Opt<int32> = None;
+let nextLotteryId : Opt<int32> = None;
 
 let lotteryState : Opt<int8> = None;
 
@@ -99,6 +99,9 @@ export default Canister({
         // update lottery state to 1 i.e. started
         lotteryState = Some(1);
 
+        // update next lottery
+        nextLotteryId = Some(id + 1);
+
         return Ok(lottery);
     }),
 
@@ -165,6 +168,7 @@ export default Canister({
         
         // confirm payment verification else fail
         const paymentVerified = await verifyPaymentInternal(caller, amountPaid, block, memo);
+
         if (!paymentVerified) {
             return Err({ NotFound: `cannot complete the purchase: cannot verify the payment, memo=${memo}` });
         }
@@ -219,9 +223,10 @@ export default Canister({
             let newId = `${uuidv4() + idTrack}`;
             let newPlayerPosn =  playerInfos.length + 1;
 
-            // update player information with new unique id
-            playerIdMap.Some.push(newId)
-            playerIndexMap.insert(caller, playerIdMap);
+            // create an empty array
+            let newEntry = [];
+            newEntry.push(newId);
+            playerIndexMap.insert(caller, newEntry);
             indexToPosnMap.insert(newId, newPlayerPosn)
 
             // get player info and add to lottery player array
@@ -238,7 +243,6 @@ export default Canister({
                     break;
                 }
             }
-
             // then get the player position
             let playerPosnOpt = indexToPosnMap.get(uniqueId);
 
@@ -254,15 +258,16 @@ export default Canister({
                 // generate new id and update the player mapping informations
                 let newId = `${uuidv4() + idTrack}`;
                 let newPlayerPosn = playerInfos.length + 1;
-                playerIdMap.Some.push(newId);
-                playerIndexMap.insert(caller, playerIdMap);
+                let playerMaps = playerIdMap.Some;
+                playerMaps.push(newId);
+                playerIndexMap.insert(caller, playerMaps);
                 indexToPosnMap.insert(newId, newPlayerPosn)
                 let playerInfo = generatePlayerInformation(id, caller, newPlayerPosn, ticketNumbers)
                 playerInfos.push(playerInfo)
             }else{
                 // else just add ticketNumbers to player tickets array
                 let playerTickets = playerInfos[playerPosn - 1].tickets;
-                playerInfos[playerPosn - 1].tickets = playerTickets.concat(ticketNumbers);
+                playerInfos[playerPosn - 1].tickets = [...playerTickets, ...ticketNumbers];
             }
         }
 
@@ -298,15 +303,24 @@ export default Canister({
         const lottery = lotteryOpt.Some;
 
         // check that lottery has ended
-        if (lotteryOpt.Some.endTime > ic.time()){
+        if (lottery.endTime > ic.time()){
             return Err({StateError: "lottery not yet over"})
         }
 
-        // check that the lottery has been completed
-        if (lottery.Some.lotteryCompleted !== 0){
-            return Err({StateError: "lottery already ended"})
+        // check that the lottery has not been completed
+        if (lottery.lotteryCompleted !== 1){
+            return Err({StateError: "lottery not yet completed"})
         }
 
+         // get and update prizepool
+         if ('None' in prizePool){
+            return Err({ ConfigError: "lottery pool is empty, please try again later."});
+        }
+        const pool = prizePool.Some;
+        // calculate winners reward
+        const winnersReward = pool / 2n;
+
+        prizePool = Some(pool - winnersReward);
         // get random number as winning tickets
         let ticketsSold = lottery.noOfTickets;
         const randomValue = Math.random() * ticketsSold;
@@ -316,7 +330,8 @@ export default Canister({
         const updatedLottery = { 
             ...lottery,
             winningTicket: Some(winningTicket),
-            lotteryCompleted: 2
+            lotteryCompleted: 2,
+            reward: winnersReward
         };
 
         // update records
@@ -337,18 +352,6 @@ export default Canister({
         // get caller
         const caller = ic.caller()
 
-        // get and update prizepool
-        if ('None' in prizePool){
-            return Err({ ConfigError: "lottery pool is empty, please try again later."});
-        }
-
-        // calculate winners reward
-        const winnersReward = prizePool.Some / 2n;
-
-        const initial = prizePool.Some;
-
-        prizePool = Some(initial - winnersReward);
-
         // get lottery and add tickets
         const lotteryOpt = lotteryStorage.get(id);
         if ("None" in lotteryOpt) {
@@ -356,6 +359,8 @@ export default Canister({
         }
 
         const lottery = lotteryOpt.Some;
+
+        const reward = lottery.reward;
 
         if(lottery.lotteryCompleted !== 2){
             return Err({StateError: "cannot check if winner yet"})
@@ -405,7 +410,7 @@ export default Canister({
             // initiate payout to winner
             // send ticket payment to icp contract
             // await tokenCanister.transfer(lotteryCanister, caller.toString(), winnersReward).call();   
-            await makePayment(playerInfo.player, winnersReward);
+            await makePayment(playerInfo.player, reward);
 
         }else{
             return Err({NotWinner: "sorry you're not winner"})
@@ -416,7 +421,7 @@ export default Canister({
             ...lottery,
             winner: playerInfo.player,
             lotteryCompleted: 3,
-            rewards: winnersReward
+           
         };
 
         lotteryStorage.insert(lottery.id, updatedLottery);
@@ -461,7 +466,7 @@ export default Canister({
     }),
 
     getLotteryConfiguration: query([], LotteryConfiguration, () => {
-        return {currlotteryId, lotteryState, ticketPrice, lotteryDuration, prizePool}
+        return {nextLotteryId, lotteryState, ticketPrice, lotteryDuration, prizePool}
     }),
 
     deleteLottery: update([int32], Result(text, Message), (id) => {
@@ -494,10 +499,10 @@ function generatePlayerInformation(lotteryId: int32, caller: Principal, newPlaye
 
 // returns to the current lottery id
 function getCurrentLotteryId() {
-    if(currlotteryId.Some){
-        return currlotteryId.Some + 1;
+    if('None' in nextLotteryId){
+        return 0;
     }else {
-        return 0
+        return nextLotteryId.Some;
     }
 }
 
@@ -549,15 +554,15 @@ function discardByTimeout(memo: nat64, delay: Duration) {
     });
 };
 
-async function verifyPaymentInternal(receiver: Principal, amount: nat64, block: nat64, memo: nat64): Promise<bool> {
+async function verifyPaymentInternal(sender: Principal, amount: nat64, block: nat64, memo: nat64): Promise<bool> {
     const blockData = await ic.call(icpLedgerCanister.query_blocks, { args: [{ start: block, length: 1n }] });
     const tx = blockData.blocks.find((block) => {
         if ("None" in block.transaction.operation) {
             return false;
         }
         const operation = block.transaction.operation.Some;
-        const senderAddress = binaryAddressFromPrincipal(ic.caller(), 0);
-        const receiverAddress = binaryAddressFromPrincipal(receiver, 0);
+        const senderAddress = binaryAddressFromPrincipal(sender, 0);
+        const receiverAddress = binaryAddressFromPrincipal(ic.id(), 0);
         return block.transaction.memo === memo &&
             hash(senderAddress) === hash(operation.Transfer?.from) &&
             hash(receiverAddress) === hash(operation.Transfer?.to) &&

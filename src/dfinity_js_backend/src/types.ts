@@ -53,7 +53,7 @@ export const Message = Variant({
 });
 
 export const LotteryConfiguration = Record({
-    currlotteryId : Opt(int32),
+    nextLotteryId : Opt(int32),
     lotteryState : Opt(int8),
     ticketPrice : Opt(nat64),
     lotteryDuration: Opt(nat64),
