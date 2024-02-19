@@ -2,7 +2,7 @@ import { StableBTreeMap, Principal, nat64, ic, Opt, int8, int32, Vec, text, None
 import {
     Ledger, binaryAddressFromAddress, binaryAddressFromPrincipal, hexAddressFromPrincipal
 } from "azle/canisters/ledger";
-import { Player, Lottery, LotteryPayload, BuyTicketPayload, QueryPayload, AddressPayload, LotteryConfiguration, Message, Order } from './types';
+import { Lottery, LotteryPayload, BuyTicketPayload, LotteryConfiguration, Message, Order } from './types';
 //@ts-ignore
 import { hashCode } from "hashcode";
 import { v4 as uuidv4 } from 'uuid';
