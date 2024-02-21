@@ -481,6 +481,7 @@ export default Canister({
         }
         return Ok(lotteryOpt.Some);
     }),
+    
 
     getLotteries: query([], Vec(Lottery), () => {
         return lotteryStorage.values();
@@ -489,6 +490,18 @@ export default Canister({
     getLotteryConfiguration: query([], LotteryConfiguration, () => {
         return {nextLotteryId, lotteryState, ticketPrice, lotteryDuration, prizePool}
     }),
+    //This function fetches and returns details about a specific lottery by its ID .
+    
+    query([int32], Result<Lottery, Message>, (id) => {
+        const lottery = lotteryStorage.get(id);
+        
+        if ('None' in lottery) {
+          return Err({ NotFound: `No lottery found with ID ${id}.` });
+        }
+        
+        return Ok(lottery.Some);
+    });
+      
 
     deleteLottery: update([int32], Result(text, Message), (id) => {
         const deletedLotteryOpt = lotteryStorage.remove(id);
@@ -502,6 +515,7 @@ export default Canister({
 
         return Ok(deletedLotteryOpt.Some.id);
     }),
+    
 })
 
 
